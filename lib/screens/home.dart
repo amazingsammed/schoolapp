@@ -1,12 +1,22 @@
+import 'dart:math';
+
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get_core/get_core.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:schoolapp/controllers/appcontroller.dart';
+import 'package:schoolapp/controllers/sharedpref.dart';
+import 'package:schoolapp/generated/assets.dart';
 import 'package:schoolapp/models/news_model.dart';
+import 'package:schoolapp/screens/post/postpreview.dart';
 import 'package:schoolapp/screens/resultpage.dart';
 import 'package:schoolapp/widgets/responsive.dart';
 
+import '../controllers/firebasecontroller.dart';
 import '../controllers/notification_services.dart';
+import '../models/articlepost.dart';
 import '../models/timetable_model.dart';
 import '../models/user_model.dart';
 import '../widgets/constants.dart';
@@ -52,7 +62,7 @@ class Home extends StatelessWidget {
           children: [
             Container(
               child: KText(
-                'Hi, ${student.firstname}',
+                'Hi, ${myappController.currentUser.name}',
                 fontsize: 20,
                 fontWeight: FontWeight.w500,
               ),
@@ -63,9 +73,14 @@ class Home extends StatelessWidget {
             SizedBox(
                 height: 80,
                 width: double.maxFinite,
-                child: ContainerWithTwoText(
-                  title: 'Accounting',
-                  subtile: 'Class : BLT 200',
+                child: InkWell(
+                  onTap: () async {
+                    await AndroidAlarmManager.periodic(const Duration(seconds: 3), Random().nextInt(pow(2, 31) as int), ()=>myappController.updateMyTimeTableText());
+                  },
+                  child: ContainerWithTwoText(
+                    title:myappController.myCurrentSubject.value.isEmpty?'Tap Here': myappController.myCurrentSubject.value[0].title,
+                    subtile: myappController.myCurrentSubject.value.isEmpty?"If you are a new user":myappController.myCurrentSubject.value[0].dayintext,
+                  ),
                 )),
             kSizedbox10,
             Row(
@@ -93,70 +108,115 @@ class Home extends StatelessWidget {
                 ),
                 kSizedbox10,
                 ContainerWithIcon(
-                  title: 'School Activities',
+                  title: 'Activities',
                   icon: Icons.timeline,
                   index: 4,
                 ),
               ],
             ),
-            kSizedbox10,
-            Row(
-              children: [
-                ContainerWithIcon(
-                  title: 'About School',
-                  icon: Icons.note_alt_outlined,
-                  index: 1,
-                ),
-              ],
-            ),
             kSizedbox20,
             KText(
-              'News',
+              'Articles',
               fontsize: 28,
               fontWeight: FontWeight.bold,
             ),
+            Divider(),
             kSizedbox20,
-            events.isEmpty
-                ? Container(
-                    alignment: Alignment.center,
-                    child: Text('No News Avaliable'),
-                  )
-                : !Responsive.isMobile(context)
-                    ? GridView.builder(
-                        shrinkWrap: true,
-                        physics: ScrollPhysics(),
-                        itemCount: events.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return EventContainer(
-                              image: events[index].image,
-                              userimage: events[index].userimage,
-                              time: events[index].starttime,
-                              title: events[index].title,
-                              avenue: events[index].avenue);
-                        },
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisExtent: 300,
-                            mainAxisSpacing: 20,
-                            crossAxisSpacing: 20),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        physics: ScrollPhysics(),
-                        itemCount: events.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return EventContainer(
-                              image: events[index].image,
-                              userimage: events[index].userimage,
-                              time: events[index].starttime,
-                              title: events[index].title,
-                              avenue: events[index].avenue);
-                        },
-                        separatorBuilder: (BuildContext context, int index) =>
-                            kSizedbox10,
-                      )
+            StreamBuilder(
+
+                stream: FirebaseFirestore.instance.collection('Post').snapshots(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  if (snapshot.hasData) {
+                    QuerySnapshot<Map<String, dynamic>> item = snapshot.data;
+                    return ListView.separated(itemCount: item.docs.length,
+                      separatorBuilder: (cc,ii)=>Divider(),
+                      shrinkWrap: true,
+                      physics: ScrollPhysics(),
+                      itemBuilder: (BuildContext context, int index) {
+                        ArticlePost itemx = ArticlePost.fromMap(item.docs[index].data());
+                        return InkWell(
+
+                            onTap: (){
+                              Get.to(()=>PostPreview(item: itemx,));
+                            },
+                            child: PostItem(item: itemx));
+                      },);
+                  } else if (snapshot.hasError) {
+                    return Icon(Icons.error_outline);
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                })
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PostItem extends StatelessWidget {
+  ArticlePost item;
+  PostItem({Key? key,required this.item}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return   Container(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: Column(
+        children: [
+          Container(
+            height: 30,
+            child: FutureBuilder(
+                future: myappController.getAuthor(item.userid),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  if (snapshot.hasData) {
+                    UserX item = snapshot.data;
+                    return Row(
+                      children: [
+                        CircleAvatar(radius:15,backgroundImage: appImage(item.image),),
+                        kSizedbox10,
+                        Text(item.name)
+                      ],
+                    );
+                  } else if (snapshot.hasError) {
+                    return Icon(Icons.error_outline);
+                  } else {
+                    return CircularProgressIndicator();
+                  }
+                }),
+          ),
+          Row(
+            children: [
+
+              Expanded(child: Column(
+
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+                  Text(item.title,style: TextStyle(
+                      fontSize: 20
+                  ),),
+                  Text('Publised on ${myDateTime(item.date)}',style: TextStyle(
+                  ),),
+                ],
+              )),
+              SizedBox(width: 6,),
+              Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: Colors.red,
+                    image: DecorationImage(
+                        image: NetworkImage(item.imageurl),
+                        fit: BoxFit.cover
+                    )
+                ),
+                height: 60,
+                width: 100,
+
+              )
+            ],
+          )
+        ],
       ),
     );
   }

@@ -12,11 +12,10 @@ extension MyStorage on AppController{
 
   Future<void> updateListInSharedPreferences() async {
     List<Map<String,dynamic>> mydata =[];
-    myTimeList.value.forEach((element) {
+    for (var element in myTimeList.value) {
       mydata.add(element.toMap());
-    });
+    }
     final prefs = await SharedPreferences.getInstance();
-    print(mydata.toString());
     await prefs.setString('mylis', json.encode(mydata));
   }
 
@@ -25,11 +24,21 @@ extension MyStorage on AppController{
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString('mylis');
     if(data ==null) return;
-    print(data);
     List mydata = json.decode(data);
     for (var element in mydata) {
       myTimeList.value.add(TimeTable.fromMap(element));
     }
+  }
+
+   void updateMyTimeTableText()  {
+     print('object');
+    final now = DateTime.now();
+    for(TimeTable item in myTimeList){
+      if(now.isAtSameMomentAs(DateTime(now.year,now.month,item.day,item.time.hour,item.time.minute))){
+        myCurrentSubject.value[0] = item;
+      }
+    }
+    print('object');
   }
 
 }

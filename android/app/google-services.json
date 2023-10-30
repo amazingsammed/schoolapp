@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1047256704680",
+    "project_id": "angle-2bc6a",
+    "storage_bucket": "angle-2bc6a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1047256704680:android:69d9503f370e126e0e049d",
+        "android_client_info": {
+          "package_name": "com.example.schoolapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1047256704680-d06e3e16a63uham08tm6b0fu9la9qp52.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.schoolapp",
+            "certificate_hash": "f8c8406103d72cfa614275b9113db5cc24622009"
+          }
+        },
+        {
+          "client_id": "1047256704680-u70cvra6cd6pl08on2o9sn79cgf2krko.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqcLioMCT1zty70CiAZTMc5jvavtROJrE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1047256704680-u70cvra6cd6pl08on2o9sn79cgf2krko.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

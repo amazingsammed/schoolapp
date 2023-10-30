@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'enums.dart';
+import '../../widgets/enums.dart';
 
 class DrawerModel {
   //complex drawer menu
